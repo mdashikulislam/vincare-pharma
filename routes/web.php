@@ -346,6 +346,9 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('sales-commission-agents/invoice/{id}', [SalesCommissionAgentController::class,'invoice']);
     Route::post('sales-commission-agents/invoice/add-payment', [SalesCommissionAgentController::class,'invoiceAddPayment'])->name('invoice-add-payment');
     Route::post('sales-commission-agents/invoice/view-payment', [SalesCommissionAgentController::class,'viewInvoicePayment'])->name('invoice.view-payment');
+    Route::delete('sales-commission-agents/invoice/delete-payment/{id}', [SalesCommissionAgentController::class,'deletePayment'])->name('invoice.delete-payment');
+    Route::get('sales-commission-agents/invoice/edit-payment/{id}', [SalesCommissionAgentController::class,'editPayment'])->name('invoice.edit-payment');
+
     //Sales Commission Agent
     Route::resource('sales-commission-agents', SalesCommissionAgentController::class);
 

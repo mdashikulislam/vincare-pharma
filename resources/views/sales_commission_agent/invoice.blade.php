@@ -78,6 +78,7 @@
                                     <th>Paid On</th>
                                     <th>Amount</th>
                                     <th>Method</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody id="payment-table-body">
@@ -241,6 +242,50 @@
                     }
                 });
         });
-
+        $(document).on('click', '.delete_payment_button', function(e) {
+            e.preventDefault();
+            swal({
+                title: LANG.sure,
+                icon: 'warning',
+                buttons: true,
+                dangerMode: true,
+            }).then(willDelete => {
+                if (willDelete) {
+                    var href = $(this).data('href');
+                    var data = $(this).serialize();
+                    $.ajax({
+                        method: 'DELETE',
+                        url: href,
+                        dataType: 'json',
+                        data: data,
+                        success: function(result) {
+                            if (result.success == true) {
+                                toastr.success(result.msg);
+                                sales_commission_agent_table.ajax.reload();
+                                $('#view-payment-modal').modal('hide');
+                            } else {
+                                toastr.error(result.msg);
+                            }
+                        },
+                    });
+                }
+            });
+        });
+        $(document).on('click','.edit-payment',function(e){
+            e.preventDefault();
+            $('#view-payment-modal').modal('hide');
+            var href = $(this).data('href');
+            $.ajax({
+                method: 'GET',
+                url: href,
+                success: function(result) {
+                    if (result.success == true) {
+                        
+                    } else {
+                        toastr.error(result.msg);
+                    }
+                },
+            });
+        })
     </script>
 @endsection

@@ -314,12 +314,46 @@ class SalesCommissionAgentController extends Controller
                 $html .= '<td>' . $commissionPayment->paid_on . '</td>';
                 $html .= '<td>php ' . $commissionPayment->amount. '</td>';
                 $html .= '<td>' . $commissionPayment->method . '</td>';
+                $html .= '<td>
+                            <a href="#" data-href="'.route('invoice.edit-payment',['id'=>$commissionPayment->id]).'" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  edit-payment tw-dw-btn-primary"><i class="glyphicon glyphicon-edit"></i> Edit</a>
+                            <a href="#" data-href="'.route('invoice.delete-payment',['id'=>$commissionPayment->id]).'" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-error delete_payment_button"><i class="glyphicon glyphicon-trash"></i> Delete</a>
+                        </td>';
                 $html .='</tr>';
             }
         }else{
             $html .='<tr><td colspan="3">No record found</td></tr>';
         }
         return response()->json(['html' => $html]);
+    }
+
+    public function editPayment($id)
+    {
+        $commissionPayment = CommissionPayment::findOrFail($id);
+        if (empty($commissionPayment)){
+            return response()->json([
+                'success' => false,
+                'message' => __('Payment not found'),
+            ]);
+        }
+        return response()->json([
+            'success' => true,
+            'data' => $commissionPayment,
+        ]);
+    }
+    public function deletePayment($id)
+    {
+        $commissionPayment = CommissionPayment::findOrFail($id);
+        if (empty($commissionPayment)){
+            return response()->json([
+                'success' => false,
+                'message' => __('Payment not found'),
+            ]);
+        }
+        $commissionPayment->delete();
+        return response()->json([
+            'success' => true,
+            'message' => __('Payment deleted successfully'),
+        ]);
     }
     public function invoiceAddPayment(Request $request)
     {
