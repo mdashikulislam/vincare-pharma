@@ -315,7 +315,7 @@ class SalesCommissionAgentController extends Controller
                 $html .= '<td>php ' . $commissionPayment->amount. '</td>';
                 $html .= '<td>' . $commissionPayment->method . '</td>';
                 $html .= '<td>
-                            <a href="#" data-href="'.route('invoice.edit-payment',['id'=>$commissionPayment->id]).'" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  edit-payment tw-dw-btn-primary"><i class="glyphicon glyphicon-edit"></i> Edit</a>
+                            <a href="#" data-update="'.route('invoice.update-payment',['id'=>$commissionPayment->id]).'" data-href="'.route('invoice.edit-payment',['id'=>$commissionPayment->id]).'" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  edit-payment tw-dw-btn-primary"><i class="glyphicon glyphicon-edit"></i> Edit</a>
                             <a href="#" data-href="'.route('invoice.delete-payment',['id'=>$commissionPayment->id]).'" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-error delete_payment_button"><i class="glyphicon glyphicon-trash"></i> Delete</a>
                         </td>';
                 $html .='</tr>';
@@ -339,6 +339,11 @@ class SalesCommissionAgentController extends Controller
             'success' => true,
             'data' => $commissionPayment,
         ]);
+    }
+
+    public function updatePayment($id, Request $request)
+    {
+        return $request->all();
     }
     public function deletePayment($id)
     {

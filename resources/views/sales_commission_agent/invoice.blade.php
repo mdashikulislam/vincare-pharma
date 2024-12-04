@@ -64,6 +64,26 @@
                 </div>
             </div>
         </div>
+        <div class="modal fade" id="edit-payment-modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <form action="" method="POST" id="edit-payment-form">
+                        @csrf
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                            <h4 class="modal-title">Add new Payment</h4>
+                        </div>
+                        <div class="modal-body" id="edit-add-payment">
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-text-white">Save</button>
+                            <button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white" data-dismiss="modal">Close</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         <div class="modal fade" id="view-payment-modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
@@ -101,6 +121,26 @@
         var id = '{{$user->id}}';
         var userId = '{{$user->id}}';
         var maxPay = 0;
+        $(document).ready( function(){
+            initDatePicker();
+            $(document).on('click','.view-payment',function(e){
+                e.preventDefault();
+                var id = $(this).data('id');
+                $.ajax({
+                    url:'{{route('invoice.view-payment')}}',
+                    method:'POST',
+                    data:{
+                        '_token':'{{csrf_token()}}',
+                        id:id,
+                        user_id:userId,
+                    },
+                    success:function(response){
+                        $('#payment-table-body').html(response.html);
+                        $('#view-payment-modal').modal('show')
+                    }
+                })
+            })
+        });
         var sales_commission_agent_table = $('#sales_commission_agent_table_invoice').DataTable({
             processing: true,
             serverSide: true,
@@ -172,29 +212,6 @@
                 format: moment_date_format + ' ' + moment_time_format,
                 ignoreReadonly: true,
             });
-        });
-        $(document).ready( function(){
-            $('.paid_on').datetimepicker({
-                format: moment_date_format + ' ' + moment_time_format,
-                ignoreReadonly: true,
-            });
-            $(document).on('click','.view-payment',function(e){
-                e.preventDefault();
-                var id = $(this).data('id');
-                $.ajax({
-                    url:'{{route('invoice.view-payment')}}',
-                    method:'POST',
-                    data:{
-                      '_token':'{{csrf_token()}}',
-                      id:id,
-                      user_id:userId,
-                    },
-                    success:function(response){
-                        $('#payment-table-body').html(response.html);
-                        $('#view-payment-modal').modal('show')
-                    }
-                })
-            })
         });
 
         $('#add-payment-modal').on('shown.bs.modal', function () {
@@ -275,17 +292,76 @@
             e.preventDefault();
             $('#view-payment-modal').modal('hide');
             var href = $(this).data('href');
+            var update = $(this).data('update')
             $.ajax({
                 method: 'GET',
                 url: href,
                 success: function(result) {
                     if (result.success == true) {
-                        
+                        var data = result.data;
+                        $('#edit-payment-form').attr('action',update)
+                        $('#edit-add-payment').html(`<div class="row">
+                                    <input type="hidden" name="id" value="${data.id}">
+                                    <div class="col-lg-6 col-12">
+                                        <div class="form-group">
+                                            <label for="amount_0">Amount:*</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon">
+                                                    <i class="fas fa-money-bill-alt"></i>
+                                                </span>
+                                                <input class="form-control payment-amount input_number" required="" value="${parseFloat(data.amount).toFixed(2)}" id="amount" placeholder="Amount" name="amount" type="text" step="any" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 col-12">
+                                        <div class="form-group">
+                                            <label for="paid_on_0">Paid on:*</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                                                <input class="form-control paid_on" readonly="" required="" name="paid_on" type="text" value="${moment(data.paid_on).format('MM/DD/YYYY HH:mm')}" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="clearfix"></div>
+                                    <div class="col-lg-6 col-12">
+                                        <div class="form-group">
+                                            <label for="method_0">Payment Method:*</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon"><i class="fas fa-money-bill-alt"></i></span>
+                                                    <select class="form-control col-md-12 payment_types_dropdown" required="" id="method_0" style="width: 100%;" name="method">
+                                                    <option value="cash" ${data.method === 'cash' ? 'selected' : ''}>Cash</option>
+                                                    <option value="card" ${data.method === 'card' ? 'selected' : ''}>Card</option>
+                                                    <option value="cheque" ${data.method === 'cheque' ? 'selected' : ''}>Cheque</option>
+                                                    <option value="bank_transfer" ${data.method === 'bank_transfer' ? 'selected' : ''}>Bank Transfer</option>
+                                                    <option value="other" ${data.method === 'other' ? 'selected' : ''}>Other</option>
+                                                    <option value="custom_pay_1" ${data.method === 'custom_pay_1' ? 'selected' : ''}>Credit</option>
+                                                    <option value="custom_pay_2" ${data.method === 'custom_pay_2' ? 'selected' : ''}>Custom Payment 2</option>
+                                                    <option value="custom_pay_3" ${data.method === 'custom_pay_3' ? 'selected' : ''}>Custom Payment 3</option>
+                                                    <option value="custom_pay_4" ${data.method === 'custom_pay_4' ? 'selected' : ''}>Custom Payment 4</option>
+                                                    <option value="custom_pay_5" ${data.method === 'custom_pay_5' ? 'selected' : ''}>Custom Payment 5</option>
+                                                    <option value="custom_pay_6" ${data.method === 'custom_pay_6' ? 'selected' : ''}>Custom Payment 6</option>
+                                                    <option value="custom_pay_7" ${data.method === 'custom_pay_7' ? 'selected' : ''}>Custom Payment 7</option>
+                                                    </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>`)
+                        initDatePicker();
+                        $('#edit-payment-modal').modal('show')
                     } else {
                         toastr.error(result.msg);
                     }
                 },
             });
         })
+    </script>
+    <script>
+        function initDatePicker(){
+            console.log(moment('2024-01-01'))
+            $('.paid_on').datetimepicker({
+                format: moment_date_format + ' ' + moment_time_format,
+                ignoreReadonly: true,
+            });
+        }
     </script>
 @endsection
