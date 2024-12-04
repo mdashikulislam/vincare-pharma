@@ -343,7 +343,48 @@ class SalesCommissionAgentController extends Controller
 
     public function updatePayment($id, Request $request)
     {
-        return $request->all();
+        $commissionPayment = CommissionPayment::findOrFail($id);
+        if (empty($commissionPayment)){
+            return response()->json([
+                'success' => false,
+                'message' => __('Payment not found'),
+            ]);
+        }
+        $transaction = Transaction::with(['sale_commission_agent'])
+            ->withSum('commissionPayments','amount')
+            ->whereHas('sale_commission_agent')
+            ->where('business_id', $commissionPayment->business_id)
+            ->where('id',$commissionPayment->transaction_id)
+            ->first();
+        if (empty($transaction)){
+            return response()->json([
+                'success' => false,
+                'msg' => __('Invoice not found.'),
+            ]);
+        }
+        $total_commission = $transaction->final_total * ($transaction->sale_commission_agent->cmmsn_percent / 100);
+        $total_payment = $transaction->commission_payments_sum_amount ?? 0;
+        $balance =  $total_commission - $total_payment;
+        if (number_format($balance, 2, '.', '') < (float)$request->amount){
+            return response()->json([
+                'success' => false,
+                'msg' => __('Due balance is '.$balance),
+            ]);
+        }
+        $commissionPayment->amount = (float)$request->amount;
+        $commissionPayment->paid_on = \Carbon::parse($request->paid_on)->format('Y-m-d H:i:s');
+        $commissionPayment->method = $request->method;
+        if ($commissionPayment->save()){
+            return response()->json([
+                'success' => true,
+                'msg' => __('Commission payment update successfully.'),
+            ]);
+        }else{
+            return response()->json([
+                'success' => false,
+                'msg' => __('messages.something_went_wrong'),
+            ]);
+        }
     }
     public function deletePayment($id)
     {

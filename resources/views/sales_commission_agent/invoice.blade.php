@@ -253,6 +253,7 @@
                                     sales_commission_agent_table.ajax.reload(); // Reload data table
                                 } else {
                                     toastr.error(result.msg);
+                                    $('form#payment-form button').prop('disabled',false)
                                 }
                             }
                         });
@@ -352,6 +353,26 @@
                         toastr.error(result.msg);
                     }
                 },
+            });
+        });
+        $('#edit-payment-form').on('submit',function(e){
+            e.preventDefault();
+            var data = $(this).serialize();
+            $.ajax({
+                method: 'POST',
+                url: $(this).attr('action'),
+                dataType: 'json',
+                data: data,
+                success: function (result) {
+                    if (result.success) {
+                        $('#edit-payment-modal').modal('hide');
+                        toastr.success(result.msg);
+                        sales_commission_agent_table.ajax.reload();
+                    } else {
+                        toastr.error(result.msg);
+                        $('#edit-payment-form button').prop('disabled',false)
+                    }
+                }
             });
         })
     </script>
