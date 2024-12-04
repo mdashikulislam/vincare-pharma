@@ -45,25 +45,52 @@
             @endcan
         @endcomponent
         <div class="modal fade" id="add-payment-modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel">
-                <div class="modal-dialog modal-lg" role="document">
-                    <div class="modal-content">
-                        <form action="{{route('invoice-add-payment')}}" method="POST" id="payment-form">
-                            @csrf
-                            <div class="modal-header">
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
-                                <h4 class="modal-title">Add new Payment</h4>
-                            </div>
-                            <div class="modal-body" id="append-add-payment">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <form action="{{route('invoice-add-payment')}}" method="POST" id="payment-form">
+                        @csrf
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                            <h4 class="modal-title">Add new Payment</h4>
+                        </div>
+                        <div class="modal-body" id="append-add-payment">
 
-                            </div>
-                            <div class="modal-footer">
-                                <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-text-white">Save</button>
-                                <button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white" data-dismiss="modal">Close</button>
-                            </div>
-                        </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-text-white">Save</button>
+                            <button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white" data-dismiss="modal">Close</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="view-payment-modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                        <h4 class="modal-title">View Payment</h4>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Paid On</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payment-table-body">
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white" data-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
+        </div>
     </section>
 
 
@@ -151,6 +178,23 @@
                 format: moment_date_format + ' ' + moment_time_format,
                 ignoreReadonly: true,
             });
+            $(document).on('click','.view-payment',function(e){
+                e.preventDefault();
+                var id = $(this).data('id');
+                $.ajax({
+                    url:'{{route('invoice.view-payment')}}',
+                    method:'POST',
+                    data:{
+                      '_token':'{{csrf_token()}}',
+                      id:id,
+                      user_id:userId,
+                    },
+                    success:function(response){
+                        $('#payment-table-body').html(response.html);
+                        $('#view-payment-modal').modal('show')
+                    }
+                })
+            })
         });
 
         $('#add-payment-modal').on('shown.bs.modal', function(e) {

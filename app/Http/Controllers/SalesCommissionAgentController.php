@@ -128,6 +128,7 @@ class SalesCommissionAgentController extends Controller
                     if ($balance > 0){
                         $html .='<a href="#" data-max="'.$balance.'" data-id="'.$query->id.'" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline add-payment tw-dw-btn-accent"><i class="fa fa-plus"></i>Add Payment</a>';
                     }
+                    $html .='<a href="#"  data-id="'.$query->id.'" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline view-payment  tw-dw-btn-primary"><i class="fa fa-eye"></i>View Payment</a>';
                     return $html;
                 })->editColumn("invoice_no", function ($row) {
                     return '<a data-href="' .
@@ -295,6 +296,28 @@ class SalesCommissionAgentController extends Controller
         }
     }
 
+    public function viewInvoicePayment(Request $request)
+    {
+        $business_id = $request->session()->get('user.business_id');
+        $commissionPayments = CommissionPayment::where('business_id', $business_id)
+            ->where('transaction_id', $request->id)
+            ->where('user_id',$request->user_id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        $html = '';
+        if ($commissionPayments->isNotEmpty()) {
+            foreach ($commissionPayments as $commissionPayment) {
+                $html .= '<tr>';
+                $html .= '<td>' . $commissionPayment->paid_on . '</td>';
+                $html .= '<td>php ' . $commissionPayment->amount. '</td>';
+                $html .= '<td>' . $commissionPayment->method . '</td>';
+                $html .='</tr>';
+            }
+        }else{
+            $html .='<tr><td colspan="3">No record found</td></tr>';
+        }
+        return response()->json(['html' => $html]);
+    }
     public function invoiceAddPayment(Request $request)
     {
         $business_id = $request->session()->get('user.business_id');
