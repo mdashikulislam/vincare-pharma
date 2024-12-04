@@ -118,8 +118,7 @@
         $(document).on('click','.add-payment',function(e){
             e.preventDefault();
             var id = $(this).data('id');
-            maxPay = $(this).data('max');
-            console.log(maxPay)
+            maxPay = parseFloat($(this).data('max')).toFixed(2);
             $('#append-add-payment').html(`<div class="row">
                                     <input type="hidden" name="transaction_id" value="${id}">
                                     <input type="hidden" name="user_id" value="${userId}">
@@ -130,7 +129,7 @@
                                                 <span class="input-group-addon">
                                                     <i class="fas fa-money-bill-alt"></i>
                                                 </span>
-                                                <input class="form-control payment-amount input_number" required="" id="amount" placeholder="Amount" name="amount" type="text" value="0.00" />
+                                                <input class="form-control payment-amount input_number" required="" id="amount" placeholder="Amount" name="amount" type="text" step="any" />
                                             </div>
                                         </div>
                                     </div>
@@ -197,43 +196,51 @@
             })
         });
 
-        $('#add-payment-modal').on('shown.bs.modal', function(e) {
+        $('#add-payment-modal').on('shown.bs.modal', function () {
+            // Ensure only one event binding occurs
             $('form#payment-form')
-                .submit(function(e) {
-                    e.preventDefault();
+                .off('submit') // Unbind any previous submit events
+                .submit(function (e) {
+                    e.preventDefault(); // Prevent default form submission
                 })
                 .validate({
-                    rules:{
-                      amount:{
-                          required:true,
-                          max: function() {
-                             return maxPay;
-                          },
-                          min:1
-                      }
+                    rules: {
+                        amount: {
+                            required: true,
+                            min: 0, // Set min value greater than 0
+                            max: function () {
+                                return maxPay; // Dynamically fetch the max value
+                            }
+                        }
                     },
-                    submitHandler: function(form) {
-                        e.preventDefault();
+                    messages: {
+                        amount: {
+                            required: "The amount is required.",
+                            min: "The amount must be greater than 0.",
+                            max: "The amount must not exceed the maximum allowed."
+                        }
+                    },
+                    submitHandler: function (form) {
                         var data = $(form).serialize();
-                        console.log(maxPay)
                         $.ajax({
                             method: $(form).attr('method'),
                             url: $(form).attr('action'),
                             dataType: 'json',
                             data: data,
-                            success: function(result) {
-                                if (result.success == true) {
+                            success: function (result) {
+                                if (result.success) {
                                     $('#add-payment-modal').modal('hide');
                                     toastr.success(result.msg);
-                                    $("form#payment-form").validate().resetForm();
-                                    sales_commission_agent_table.ajax.reload();
+                                    $("form#payment-form").validate().resetForm(); // Reset validation state
+                                    sales_commission_agent_table.ajax.reload(); // Reload data table
                                 } else {
                                     toastr.error(result.msg);
                                 }
-                            },
+                            }
                         });
-                    },
+                    }
                 });
         });
+
     </script>
 @endsection

@@ -95,7 +95,7 @@ class User extends Authenticatable
         return $user;
     }
 
-    public function commissionAgentPayment()
+    public function commissionAgentInvoice()
     {
         return $this->hasMany(Transaction::class,'commission_agent','id');
     }

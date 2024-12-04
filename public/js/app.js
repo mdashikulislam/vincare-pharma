@@ -1704,7 +1704,7 @@ $(document).ready(function() {
             { data: 'email' },
             { data: 'contact_no' },
             { data: 'address' },
-            { data: 'commission_agent_payment_sum_final_total',searchable: false },
+            { data: 'commission_agent_invoice_sum_final_total',searchable: false },
             { data: 'cmmsn_percent' },
             { data: 'sales_commission' },
             { data: 'total_payment' },

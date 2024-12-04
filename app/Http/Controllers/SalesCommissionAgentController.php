@@ -41,8 +41,14 @@ class SalesCommissionAgentController extends Controller
         if (request()->ajax()) {
             $business_id = request()->session()->get('user.business_id');
             $users = User::where('business_id', $business_id)
-                        ->where('is_cmmsn_agnt', 1)
-                        ->withSum('commissionAgentPayment','final_total')
+                    ->where('is_cmmsn_agnt', 1)
+                    ->withSum('commissionAgentInvoice', 'final_total')
+                    ->withCount([
+                        'commissionAgentInvoice as total_payment' => function ($query) {
+                            $query->join('commission_payments', 'transactions.id', '=', 'commission_payments.transaction_id')
+                                ->select(DB::raw('SUM(commission_payments.amount)'));
+                        },
+                    ])
                         ->addSelect(['id',
                             DB::raw("CONCAT(COALESCE(surname, ''), ' ', COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as full_name"),
                             'email', 'contact_no', 'address', 'cmmsn_percent' ]);
@@ -58,20 +64,17 @@ class SalesCommissionAgentController extends Controller
                     @endcan
                     <a href="{{action(\'App\Http\Controllers\SalesCommissionAgentController@invoice\', [$id])}}" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-accent"><i class="fa fa-eye"></i>Invoice</a>'
                 )->addColumn('sales_commission',function ($query){
-                    return $query->commission_agent_payment_sum_final_total * ($query->cmmsn_percent / 100);
-                })
-                ->addColumn('total_payment',function ($query){
-                    return 0;
+                    return $query->commission_agent_invoice_sum_final_total * ($query->cmmsn_percent / 100);
                 })
                 ->addColumn('balance',function ($query){
-                    return ($query->commission_agent_payment_sum_final_total ?? 0) * ($query->cmmsn_percent / 100);
+                    return (($query->commission_agent_invoice_sum_final_total ?? 0) * ($query->cmmsn_percent / 100)) - $query->total_payment;
                 })
                 ->filterColumn('full_name', function ($query, $keyword) {
                     $query->whereRaw("CONCAT(COALESCE(surname, ''), ' ', COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) like ?", ["%{$keyword}%"]);
                 })
                 ->editColumn(
-                    'commission_agent_payment_sum_final_total',
-                    '@format_currency($commission_agent_payment_sum_final_total)'
+                    'commission_agent_invoice_sum_final_total',
+                    '@format_currency($commission_agent_invoice_sum_final_total)'
                 )
                 ->editColumn(
                     'sales_commission',
@@ -321,10 +324,10 @@ class SalesCommissionAgentController extends Controller
     public function invoiceAddPayment(Request $request)
     {
         $business_id = $request->session()->get('user.business_id');
-        if ($request->amount < 1){
+        if ($request->amount <= 0){
             return  response()->json([
                 'success' => false,
-                'msg' => __('Please enter amount greater than or equal to 1.'),
+                'msg' => __('Please enter amount greater than 0.'),
             ]);
         }
         $transaction = Transaction::with(['sale_commission_agent'])
@@ -342,7 +345,7 @@ class SalesCommissionAgentController extends Controller
         $total_commission = $transaction->final_total * ($transaction->sale_commission_agent->cmmsn_percent / 100);
         $total_payment = $transaction->commission_payments_sum_amount ?? 0;
         $balance =  $total_commission - $total_payment;
-        if ($balance < (float)$request->amount){
+        if (number_format($balance, 2, '.', '') < (float)$request->amount){
             return response()->json([
                 'success' => false,
                 'msg' => __('Due balance is '.$balance),
