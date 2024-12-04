@@ -45,7 +45,7 @@
         <div class="col-sm-12">
             @component('components.widget', ['title' => __('report.summary')])
                 <h3 class="text-muted">
-                    {{ __('report.total_sell') }} - {{ __('lang_v1.total_sales_return') }}: 
+                    {{ __('report.total_sell') }} - {{ __('lang_v1.total_sales_return') }}:
                     <span id="sr_total_sales">
                         <i class="fas fa-sync fa-spin fa-fw"></i>
                     </span>
@@ -60,7 +60,7 @@
                 </h3>
                 <div class="hide" id="total_payment_with_commsn_div">
                     <h3 class="text-muted">
-                        {{ __('lang_v1.total_payment_with_commsn') }}: 
+                        {{ __('lang_v1.total_payment_with_commsn') }}:
                         <span id="total_payment_with_commsn">
                             <i class="fas fa-sync fa-spin fa-fw"></i>
                         </span>
@@ -68,14 +68,14 @@
                 </div>
                 <div class="hide" id="total_commission_div">
                     <h3 class="text-muted">
-                        {{ __('lang_v1.total_sale_commission') }}: 
+                        {{ __('lang_v1.total_sale_commission') }}:
                         <span id="sr_total_commission">
                             <i class="fas fa-sync fa-spin fa-fw"></i>
                         </span>
                     </h3>
                 </div>
                 <h3 class="text-muted">
-                    {{ __('report.total_expense') }}: 
+                    {{ __('report.total_expense') }}:
                     <span id="sr_total_expenses">
                         <i class="fas fa-sync fa-spin fa-fw"></i>
                     </span>
@@ -134,13 +134,13 @@
 
 </section>
 <!-- /.content -->
-<div class="modal fade view_register" tabindex="-1" role="dialog" 
+<div class="modal fade view_register" tabindex="-1" role="dialog"
     aria-labelledby="gridSystemModalLabel">
 </div>
-<div class="modal fade payment_modal" tabindex="-1" role="dialog" 
+<div class="modal fade payment_modal" tabindex="-1" role="dialog"
         aria-labelledby="gridSystemModalLabel">
 </div>
-<div class="modal fade edit_payment_modal" tabindex="-1" role="dialog" 
+<div class="modal fade edit_payment_modal" tabindex="-1" role="dialog"
     aria-labelledby="gridSystemModalLabel">
 </div>
 

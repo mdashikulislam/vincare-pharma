@@ -343,8 +343,11 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/import-products', [ImportProductsController::class, 'index']);
     Route::post('/import-products/store', [ImportProductsController::class, 'store']);
 
+    Route::get('sales-commission-agents/invoice/{id}', [SalesCommissionAgentController::class,'invoice']);
+    Route::post('sales-commission-agents/invoice/add-payment', [SalesCommissionAgentController::class,'invoiceAddPayment'])->name('invoice-add-payment');
     //Sales Commission Agent
     Route::resource('sales-commission-agents', SalesCommissionAgentController::class);
+
 
     //Stock Transfer
     Route::get('stock-transfers/print/{id}', [StockTransferController::class, 'printInvoice']);

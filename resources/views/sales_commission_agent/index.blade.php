@@ -37,7 +37,11 @@
                             <th>@lang( 'business.email' )</th>
                             <th>@lang( 'lang_v1.contact_no' )</th>
                             <th>@lang( 'business.address' )</th>
+                            <th>Total Invoice</th>
                             <th>@lang( 'lang_v1.cmmsn_percent' )</th>
+                            <th>Total Commission</th>
+                            <th>Total Payment</th>
+                            <th>Total Balance</th>
                             <th>@lang( 'messages.action' )</th>
                         </tr>
                     </thead>

@@ -347,7 +347,7 @@ class SellController extends Controller
                 $sells->addSelect('transactions.is_recurring', 'transactions.recur_parent_id');
             }
             $sales_order_statuses = Transaction::sales_order_statuses();
-            
+
             $datatable = Datatables::of($sells)
                 ->addColumn(
                     'action',

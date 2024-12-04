@@ -95,6 +95,11 @@ class User extends Authenticatable
         return $user;
     }
 
+    public function commissionAgentPayment()
+    {
+        return $this->hasMany(Transaction::class,'commission_agent','id');
+    }
+
     /**
      * Gives locations permitted for the logged in user
      *

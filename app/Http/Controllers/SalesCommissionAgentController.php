@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\CommissionPayment;
 use App\User;
 use App\Utils\Util;
 use DataTables;
@@ -41,24 +42,49 @@ class SalesCommissionAgentController extends Controller
             $business_id = request()->session()->get('user.business_id');
             $users = User::where('business_id', $business_id)
                         ->where('is_cmmsn_agnt', 1)
-                        ->select(['id',
+                        ->withSum('commissionAgentPayment','final_total')
+                        ->addSelect(['id',
                             DB::raw("CONCAT(COALESCE(surname, ''), ' ', COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as full_name"),
-                            'email', 'contact_no', 'address', 'cmmsn_percent', ]);
-
+                            'email', 'contact_no', 'address', 'cmmsn_percent' ]);
             return Datatables::of($users)
                 ->addColumn(
                     'action',
                     '@can("user.update")
                     <button type="button" data-href="{{action(\'App\Http\Controllers\SalesCommissionAgentController@edit\', [$id])}}" data-container=".commission_agent_modal" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  btn-modal tw-dw-btn-primary"><i class="glyphicon glyphicon-edit"></i> @lang("messages.edit")</button>
-                        &nbsp;
-                        @endcan
-                        @can("user.delete")
-                        <button data-href="{{action(\'App\Http\Controllers\SalesCommissionAgentController@destroy\', [$id])}}" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-error delete_commsn_agnt_button"><i class="glyphicon glyphicon-trash"></i> @lang("messages.delete")</button>
-                        @endcan'
-                )
+                    &nbsp;
+                    @endcan
+                    @can("user.delete")
+                    <button data-href="{{action(\'App\Http\Controllers\SalesCommissionAgentController@destroy\', [$id])}}" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-error delete_commsn_agnt_button"><i class="glyphicon glyphicon-trash"></i> @lang("messages.delete")</button>
+                    @endcan
+                    <a href="{{action(\'App\Http\Controllers\SalesCommissionAgentController@invoice\', [$id])}}" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-accent"><i class="fa fa-eye"></i>Invoice</a>'
+                )->addColumn('sales_commission',function ($query){
+                    return $query->commission_agent_payment_sum_final_total * ($query->cmmsn_percent / 100);
+                })
+                ->addColumn('total_payment',function ($query){
+                    return 0;
+                })
+                ->addColumn('balance',function ($query){
+                    return ($query->commission_agent_payment_sum_final_total ?? 0) * ($query->cmmsn_percent / 100);
+                })
                 ->filterColumn('full_name', function ($query, $keyword) {
                     $query->whereRaw("CONCAT(COALESCE(surname, ''), ' ', COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) like ?", ["%{$keyword}%"]);
                 })
+                ->editColumn(
+                    'commission_agent_payment_sum_final_total',
+                    '@format_currency($commission_agent_payment_sum_final_total)'
+                )
+                ->editColumn(
+                    'sales_commission',
+                    '@format_currency($sales_commission)'
+                )
+                ->editColumn(
+                    'total_payment',
+                    '@format_currency($total_payment)'
+                )
+                ->editColumn(
+                    'balance',
+                    '@format_currency($balance)'
+                )
                 ->removeColumn('id')
                 ->rawColumns(['action'])
                 ->make(true);
@@ -67,6 +93,64 @@ class SalesCommissionAgentController extends Controller
         return view('sales_commission_agent.index');
     }
 
+    public function invoice( $id)
+    {
+        $business_id = request()->session()->get('user.business_id');
+        $user = User::where('business_id', $business_id)->findOrFail($id);
+        if (empty($user)){
+            abort(403, 'User not found.');
+        }
+        if (\request()->ajax()){
+            $total_commission_percent = $user->cmmsn_percent;
+            $transactions = Transaction::withSum('commissionPayments','amount')
+                ->where('business_id', $business_id)
+                ->where('commission_agent', $id);
+            return Datatables::of($transactions)
+                ->addColumn('total_commission',function ($query) use($total_commission_percent){
+                    return $query->final_total * ($total_commission_percent / 100);
+                })
+                ->addColumn('sales_commission_percentage',function ($query) use($user){
+                    return $user->cmmsn_percent;
+                })
+                ->addColumn('total_payment',function ($query) use($user){
+                    return $query->commission_payments_sum_amount ?? 0;
+                })
+                ->addColumn('total_balance', function ($query) use ($total_commission_percent) {
+                    $total_commission = $query->final_total * ($total_commission_percent / 100);
+                    $total_payment = $query->commission_payments_sum_amount ?? 0;
+                    return $total_commission - $total_payment;
+                })
+                ->addColumn('action', function ($query) use ($total_commission_percent){
+                    $total_commission = $query->final_total * ($total_commission_percent / 100);
+                    $total_payment = $query->commission_payments_sum_amount ?? 0;
+                    $balance =  $total_commission - $total_payment;
+                    $html = '';
+                    if ($balance > 0){
+                        $html .='<a href="#" data-max="'.$balance.'" data-id="'.$query->id.'" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline add-payment tw-dw-btn-accent"><i class="fa fa-plus"></i>Add Payment</a>';
+                    }
+                    return $html;
+                })->editColumn("invoice_no", function ($row) {
+                    return '<a data-href="' .
+                        action(
+                            [\App\Http\Controllers\SellController::class, "show"],
+                            [$row->id]
+                        ) .
+                        '" href="#" data-container=".view_modal" class="btn-modal">' .
+                        $row->invoice_no .
+                        "</a>";
+                })
+                ->editColumn('final_total','@format_currency($final_total)')
+                ->editColumn('total_commission','@format_currency($total_commission)')
+                ->editColumn('total_payment','@format_currency($total_payment)')
+                ->editColumn('total_balance','@format_currency($total_balance)')
+                ->removeColumn('id')
+                ->rawColumns(['invoice_no','action'])
+                ->make(true);
+        }
+
+        return view('sales_commission_agent.invoice')
+            ->with(['user'=>$user]);
+    }
     /**
      * Show the form for creating a new resource.
      *
@@ -208,6 +292,56 @@ class SalesCommissionAgentController extends Controller
             }
 
             return $output;
+        }
+    }
+
+    public function invoiceAddPayment(Request $request)
+    {
+        $business_id = $request->session()->get('user.business_id');
+        if ($request->amount < 1){
+            return  response()->json([
+                'success' => false,
+                'msg' => __('Please enter amount greater than or equal to 1.'),
+            ]);
+        }
+        $transaction = Transaction::with(['sale_commission_agent'])
+            ->withSum('commissionPayments','amount')
+            ->whereHas('sale_commission_agent')
+            ->where('business_id', $business_id)
+            ->where('id',$request->transaction_id)
+            ->first();
+        if (empty($transaction)){
+            return response()->json([
+                'success' => false,
+                'msg' => __('Invoice not found.'),
+            ]);
+        }
+        $total_commission = $transaction->final_total * ($transaction->sale_commission_agent->cmmsn_percent / 100);
+        $total_payment = $transaction->commission_payments_sum_amount ?? 0;
+        $balance =  $total_commission - $total_payment;
+        if ($balance < (float)$request->amount){
+            return response()->json([
+                'success' => false,
+                'msg' => __('Due balance is '.$balance),
+            ]);
+        }
+        $commissionPayment = new CommissionPayment();
+        $commissionPayment->transaction_id = $request->transaction_id;
+        $commissionPayment->business_id = $business_id;
+        $commissionPayment->user_id = $request->user_id;
+        $commissionPayment->amount = (float)$request->amount;
+        $commissionPayment->paid_on = \Carbon::parse($request->paid_on)->format('Y-m-d H:i:s');
+        $commissionPayment->method = $request->method;
+        if ($commissionPayment->save()){
+            return response()->json([
+                'success' => true,
+                'msg' => __('Commission payment added successfully.'),
+            ]);
+        }else{
+            return response()->json([
+                'success' => false,
+                'msg' => __('messages.something_went_wrong'),
+            ]);
         }
     }
 }

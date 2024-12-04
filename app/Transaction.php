@@ -407,5 +407,8 @@ class Transaction extends Model
         return $sales_orders;
     }
 
-   
+    public function commissionPayments()
+    {
+        return $this->hasMany(CommissionPayment::class,'transaction_id','id');
+   }
 }
